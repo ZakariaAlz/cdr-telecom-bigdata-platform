@@ -1,0 +1,17 @@
+# Ignore Docker volumes and logs
+*.log
+.env
+*/tmp/*
+*/logs/*
+tmp/
+logs/
+data/
+*.swp
+# Ignore Python compiled files
+__pycache__/
+*.py[cod]
+# Idea or VSCode or OS-specific files
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db
