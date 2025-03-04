@@ -1,0 +1,93 @@
+#version: "3.9"
+services:
+  ################################################################
+  # HADOOP NAMENODE
+  ################################################################
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    env_file:
+      - hadoop.env
+    environment:
+      - CLUSTER_NAME=bigdata_cluster
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    networks:
+      - hadoop
+  ###############################################################
+  # HADOOP DATANODE 1
+  ################################################################
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode1
+    hostname: datanode1
+    env_file:
+      - hadoop.env
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    volumes:
+      - hadoop_datanode1:/hadoop/dfs/data
+    networks:
+      - hadoop
+  ###############################################################
+  # HADOOP DATANODE 2
+  ################################################################
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    hostname: datanode2
+    env_file:
+      - hadoop.env
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+    volumes:
+      - hadoop_datanode2:/hadoop/dfs/data
+    networks:
+      - hadoop
+
+  ################################################################
+  # SPARK MASTER
+  ################################################################
+  spark-master:
+    image: bde2020/spark-master:2.4.5-hadoop2.7
+    container_name: spark-master
+    networks: 
+      - hadoop
+    ports:
+      - "8080:8080" # Spark master UI 
+      - "7077:7077" # Spar master port 
+      - "6066:6066" # Spark REST port
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8080
+      - SERVICE_PRECONDITION=namenode:9000 datanode1:9864 datanode2:9864
+
+  ################################################################
+  # SPARK WORKER (You can add more if needed)
+  ################################################################
+  spark-worker: 
+    image: bde2020/spark-worker:2.4.5-hadoop2.7
+    container_name: spark-worker
+    networks: 
+      - hadoop
+    ports: 
+      - "8081:8081" # Spark worker UI
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=2G
+      - SPARK_WORKER_CORES=1
+      - SERVICE_PRECONDITION=spark-master:7077
+
+volumes: 
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2:
+
+networks: 
+  hadoop:
+
