@@ -1,0 +1,409 @@
+# Ignore Docker volumes and logs
+*.log
+.env
+*/tmp/*
+*/logs/*
+tmp/
+logs/
+../batch/data/
+*.swp
+# Ignore Python compiled files
+__pycache__/
+*.py[cod]
+# Idea or VSCode or OS-specific files
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db
+# Ignore ,env files
+.env
+docker/.env
+
+@"
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+`$RECYCLE.BIN/
+
+# Data files
+data/raw/*
+data/processed/*
+data/warehouse/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/warehouse/.gitkeep
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Airflow
+airflow/logs/
+airflow/airflow.db
+
+# Environment
+.env
+venv/
+*.pyc
+__pycache__/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# Hadoop/Spark
+hadoop/warehouse/*
+!hadoop/warehouse/.gitkeep
+spark-warehouse/
+metastore_db/
+
+# Python
+*.py[cod]
+*$py.class
+dist/
+build/
+*.egg-info/
+"@ | Out-File -FilePath .gitignore -Encoding utf8
+
+# ===========================
+# CDR Data Files
+# ===========================
+# Raw CDR data in batch folder
+batch/data/raw/
+batch/data/cleaned/
+
+# Data directories at root
+data/raw/
+data/cleaned/
+data/exports/
+
+# CSV and Excel files
+*.csv
+*.xls
+*.xlsx
+!batch/data/raw/.gitkeep
+!batch/data/cleaned/.gitkeep
+
+# CDR Generator - ignore everything except Python-CDR-Generator
+cdr-data-generator/*
+!cdr-data-generator/Python-CDR-Generator/
+cdr-data-generator/Python-CDR-Generator/results/
+cdr-data-generator/Python-CDR-Generator/tmp_cdr_chunks/
+cdr-data-generator/Python-CDR-Generator/__pycache__/
+cdr-data-generator/Python-CDR-Generator/.git/
+
+# Parquet and compressed files
+*.parquet
+*.snappy
+*.snappy.parquet
+
+# Data transfer folder
+batch/data-transfer/
+data-transfer/
+
+# ===========================
+# Big Data Processing
+# ===========================
+# Hadoop
+batch/hadoop/namenode/
+batch/hadoop/datanode*/
+batch/hadoop/warehouse/
+hadoop/namenode/
+hadoop/datanode*/
+hadoop/warehouse/
+
+# Don't ignore config files
+!batch/hadoop/config/
+!hadoop/config/
+
+# Spark
+spark/logs/
+**/spark-warehouse/
+*.crc
+_SUCCESS
+_temporary/
+.spark-staging*/
+
+# Hive
+hive/metastore_db/
+hive/warehouse/
+derby.log
+metastore_db/
+
+# ===========================
+# Airflow
+# ===========================
+batch/airflow/logs/
+airflow/logs/
+**/airflow/logs/
+airflow/plugins/__pycache__/
+airflow/dags/__pycache__/
+batch/airflow/plugins/__pycache__/
+batch/airflow/dags/__pycache__/
+airflow-webserver.pid
+airflow.db
+airflow.cfg
+unittests.cfg
+
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# ===========================
+# Jupyter & Notebooks
+# ===========================
+# Only ignore checkpoints and temporary directories
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Ignore exports but keep notebooks
+batch/jupyter/notebooks/dashboards/exports/
+jupyter/notebooks/dashboards/exports/
+
+# Ignore data directories inside notebooks
+batch/jupyter/notebooks/data/
+jupyter/notebooks/data/
+
+# KEEP all notebooks - they contain important code
+!batch/jupyter/notebooks/**/*.ipynb
+!jupyter/notebooks/**/*.ipynb
+!streaming/**/*.ipynb
+
+# ===========================
+# Databases & Storage
+# ===========================
+# PostgreSQL
+*.sql
+*.dump
+*.backup
+pg_data/
+postgres-data/
+
+# General database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ===========================
+# IDE and Editors
+# ===========================
+# VSCode
+.vscode/
+*.code-workspace
+.history/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.metadata/
+
+# ===========================
+# System Files
+# ===========================
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Linux
+*~
+.directory
+.Trash-*
+.nfs*
+
+# ===========================
+# Logs and Temporary Files
+# ===========================
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.pid
+*.seed
+*.pid.lock
+
+# Log directories
+logs/
+*/logs/
+**/logs/
+
+# ===========================
+# Sensitive Information
+# ===========================
+# Environment variables
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+!.env.example
+
+# Credentials and secrets
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+secrets/
+credentials/
+**/credentials/
+
+# Configuration with sensitive data
+config/local/
+config/production/
+**/config/*.local.*
+
+# ===========================
+# Container & Orchestration
+# ===========================
+# Docker/Podman volumes
+volumes/
+**/volumes/
+
+# Container runtime
+*.pid
+.container*
+
+# Lock files (keep these in version control)
+!Pipfile.lock
+!package-lock.json
+!yarn.lock
+!poetry.lock
+
+# ===========================
+# Project Specific
+# ===========================
+# Data transfer temporary files
+data-transfer/
+batch/data-transfer/
+
+# Backup files
+backup_hdfs.ps1
+**/backup/
+*.backup
+
+# Results and outputs
+results/
+output/
+exports/
+**/exports/
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Dashboards exports
+jupyter/notebooks/dashboards/exports/
+superset/exports/
+
+# UML compiled outputs
+uml/*.png
+uml/*.svg
+uml/*.pdf
+
+# ===========================
+# Build and Dependencies
+# ===========================
+node_modules/
+bower_components/
+vendor/
+target/
+*.jar
+!jdbc/*.jar  # Keep JDBC drivers
+
+# Maven
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# ===========================
+# Testing
+# ===========================
+coverage/
+.coverage
+.pytest_cache/
+.tox/
+htmlcov/
+*.cover
+.hypothesis/
+
+# ===========================
+# Exceptions
+# ===========================
+# Keep these files
+!.gitignore
+!.gitkeep
+!requirements.txt
+!Dockerfile
+!docker-compose*.yml
+!*/Dockerfile
+!README.md
+!**/README.md
+
+# Keep configuration templates
+!*.example
+!*.template
+!*.sample
+
+# Keep SQL schema files
+!schema/*.sql
+!migrations/*.sql

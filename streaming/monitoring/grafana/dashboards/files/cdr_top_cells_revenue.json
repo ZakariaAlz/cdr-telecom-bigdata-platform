@@ -1,0 +1,79 @@
+{
+  "uid": "cdr-top-cells-revenue",
+  "title": "CDR Top Cells Revenue Analysis",
+  "tags": ["revenue", "cells", "performance"],
+  "timezone": "browser",
+  "refresh": "1m",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "title": "Top Revenue Generating Cells",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "topk(20, sum by (cell_id, wilaya) (rate(cdr_events_generated_total{event_type=\"SESSION_END\"}[1h]) * 3600 * 2.5))",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          },
+          "unit": "currencyDZD"
+        }
+      }
+    },
+    {
+      "title": "Revenue Distribution by Wilaya",
+      "type": "piechart",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum by (wilaya) (rate(cdr_events_generated_total{event_type=\"SESSION_END\"}[24h]) * 86400 * 2.5)",
+          "legendFormat": "{{wilaya}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "Sessions per Cell",
+      "type": "bargauge",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (cell_id) (increase(cdr_events_generated_total{event_type=\"SESSION_START\"}[1h])))",
+          "legendFormat": "{{cell_id}}",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "Revenue Trends by Network Type",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum by (network_type) (rate(cdr_events_generated_total{event_type=\"SESSION_END\"}[5m]) * 300 * 2.5)",
+          "legendFormat": "{{network_type}}",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyDZD",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20
+          }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

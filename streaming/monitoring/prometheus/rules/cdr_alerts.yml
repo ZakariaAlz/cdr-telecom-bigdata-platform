@@ -1,0 +1,106 @@
+groups:
+  # Alertes Infrastructure Kafka
+  - name: kafka_infrastructure
+    interval: 30s
+    rules:
+      - alert: KafkaConsumerLag
+        expr: kafka_consumer_lag_sum > 100000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High Kafka consumer lag"
+          description: "Consumer lag for {{ $labels.topic }} is {{ $value }} (threshold: 100k)"
+      
+      - alert: KafkaBrokerDown
+        expr: up{job="kafka"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Kafka broker is down"
+          description: "Kafka broker {{ $labels.instance }} is unreachable"
+
+  # Alertes Business CDR
+  - name: cdr_business_alerts
+    interval: 30s
+    rules:
+      - alert: HighAnomalyRate
+        expr: sum(rate(cdr_events_generated_total{event_type="anomaly"}[5m])) > 10
+        for: 5m
+        labels:
+          severity: critical
+          team: fraud
+        annotations:
+          summary: "High anomaly detection rate"
+          description: "Anomaly rate is {{ $value | humanize }}/sec (threshold: 10/sec)"
+      
+      - alert: RevenueDropAlert
+        expr: sum(rate(cdr_events_generated_total[5m])) * 2.5 < 1000
+        for: 10m
+        labels:
+          severity: warning
+          team: business
+        annotations:
+          summary: "Revenue generation dropped"
+          description: "Estimated revenue rate: {{ $value | humanize }} DZD/sec"
+      
+      - alert: ChurnRiskSpike
+        expr: sum(increase(cdr_events_generated_total{churn_risk_flag="1"}[5m])) > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: retention
+        annotations:
+          summary: "High churn risk detected"
+          description: "{{ $value | humanize }} users at churn risk in last 5 minutes"
+
+  # Alertes Performance Pipeline
+  - name: pipeline_performance
+    interval: 30s
+    rules:
+      - alert: FlinkJobDown
+        expr: up{job="flink"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Flink job is down"
+          description: "Flink {{ $labels.instance }} is not responding"
+      
+      - alert: HighProcessingLatency
+        expr: histogram_quantile(0.95, flink_taskmanager_job_task_operator_KafkaSourceReader_KafkaSourceReader_SourceReader_numRecordsInPerSecond) < 100
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Low processing throughput"
+          description: "Processing only {{ $value | humanize }} records/sec"
+
+  # Alertes Réseau Telecom
+  - name: telecom_network_alerts
+    interval: 1m
+    rules:
+      - alert: NetworkCongestion
+        expr: avg by (cell_id, wilaya) (cdr_active_sessions) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          team: network
+        annotations:
+          summary: "Cell tower congestion"
+          description: "Cell {{ $labels.cell_id }} in {{ $labels.wilaya }} has {{ $value }} active sessions"
+      
+      - alert: QoSViolation
+        expr: avg by (wilaya) (rate(cdr_events_generated_total{qos_alert_level="ALERT"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: network
+        annotations:
+          summary: "QoS violations detected"
+          description: "{{ $labels.wilaya }} experiencing {{ $value | humanizePercentage }} QoS alerts"

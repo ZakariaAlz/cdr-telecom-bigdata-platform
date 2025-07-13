@@ -1,0 +1,382 @@
+services:
+
+  namenode:
+    image: apache/hadoop:3.4.1
+    container_name: namenode
+    hostname: namenode
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    ports:
+      - "9870:9870"  
+      - "9000:9000" 
+    volumes:
+      - namenode_data:/opt/hadoop/data/nameNode
+      - ./hadoop/config/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml 
+      - ./hadoop/config/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./hadoop/config/hadoop/log4j.properties:/opt/hadoop/etc/hadoop/log4j.properties
+      - ../scripts/start-hdfs.sh:/opt/hadoop/scripts/start-hdfs.sh
+      - ../data:/mnt/data  
+      - ../cdr-data-generator/data/generated_cdr:/mnt/generated_cdr
+      - ../cdr-data-generator/data/generated_at_cdr:/mnt/generated_at_cdr
+      - ../cdr-data-generator/data/generated_at_cdr_enhanced:/mnt/generated_at_cdr_enhanced
+      - ../cdr-data-generator/data/generated_at_cdr_enhanced_fixed:/mnt/generated_at_cdr_enhanced_fixed 
+    command: [ "/bin/bash", "/opt/hadoop/scripts/start-hdfs.sh" ]
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9870"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - datastack-net
+
+  datanode1:
+    image: apache/hadoop:3.4.1
+    container_name: datanode1
+    hostname: datanode1
+    user: root
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    ports:
+      - "9864:9864"
+    volumes:
+      - datanode1_data:/opt/hadoop/data/dataNode
+      - ./hadoop/config/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hadoop/config/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./hadoop/config/hadoop/log4j.properties:/opt/hadoop/etc/hadoop/log4j.properties
+      - ../scripts/init-datanode.sh:/opt/hadoop/scripts/init-datanode.sh
+    depends_on:
+      - namenode
+    command: [ "/bin/bash", "/opt/hadoop/scripts/init-datanode.sh" ]
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9864"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - datastack-net
+
+  datanode2:
+    image: apache/hadoop:3.4.1
+    container_name: datanode2
+    hostname: datanode2
+    user: root
+    ports:
+      - "9865:9864"
+    environment:
+      - HADOOP_HOME=/opt/hadoop
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    volumes:
+      - datanode2_data:/opt/hadoop/data/dataNode
+      - ./hadoop/config/hadoop/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hadoop/config/hadoop/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./hadoop/config/hadoop/log4j.properties:/opt/hadoop/etc/hadoop/log4j.properties
+      - ../scripts/init-datanode.sh:/opt/hadoop/scripts/init-datanode.sh 
+    depends_on:
+      - namenode
+    command: [ "/bin/bash", "/opt/hadoop/scripts/init-datanode.sh" ]
+    restart: always
+    networks:
+      - datastack-net
+
+  hive-metastore-db:
+      image: postgres:14
+      container_name: hive-metastore-db
+      user: root 
+      environment:
+        - POSTGRES_DB=metastore
+        - POSTGRES_USER=hive
+        - POSTGRES_PASSWORD=hive
+      volumes:
+        - hive_metastore_db:/var/lib/postgresql/data  
+      networks:
+        - datastack-net
+      restart: always
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
+  hive-metastore:
+      image: apache/hive:4.0.0
+      container_name: hive-metastore
+      user: root 
+      networks: 
+      - datastack-net
+      environment:
+        - SERVICE_NAME=metastore
+        - DB_DRIVER=postgres
+        - HIVE_DB_NAME=metastore
+        - HIVE_DB_USER=hive
+        - HIVE_DB_PASS=hive
+        - HIVE_JDBC_URL=jdbc:postgresql://hive-metastore-db:5432/metastore
+        - SKIP_SCHEMA_INIT=false
+      volumes:
+        - ./hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+        - ./hadoop/config/hadoop/core-site.xml:/opt/hive/conf/core-site.xml
+        - ./hadoop/config/hadoop/hdfs-site.xml:/opt/hive/conf/hdfs-site.xml
+        - ./hive/jdbc/postgresql-42.7.2.jar:/opt/hive/lib/postgresql-42.7.2.jar
+      depends_on:
+        - hive-metastore-db
+      ports:
+        - "9083:9083"
+
+  hiveserver2:
+    image: apache/hive:4.0.0
+    container_name: hiveserver2
+    hostname: hiveserver2
+    user: root 
+    ports:
+      - "10000:10000"
+    volumes:
+      - ./hive/hive-site.xml:/opt/hive/conf/hive-site.xml:ro
+      - ./hadoop/config/hadoop/core-site.xml:/opt/hive/conf/core-site.xml
+      - ./hadoop/config/hadoop/hdfs-site.xml:/opt/hive/conf/hdfs-site.xml
+      - ./hive/jdbc/postgresql-42.7.2.jar:/opt/hive/lib/postgresql-42.7.2.jar
+    environment:
+      - SERVICE_NAME=hiveserver2
+      - DB_DRIVER=postgres  
+      - HIVE_DB_NAME=metastore
+      - HIVE_DB_USER=hive
+      - HIVE_DB_PASS=hive
+      - HIVE_JDBC_URL=jdbc:postgresql://hive-metastore-db:5432/metastore
+      - SKIP_SCHEMA_INIT=false
+      - HIVE_SERVER2_THRIFT_PORT=10000
+    depends_on:
+      - hive-metastore
+    command: ["/opt/hive/bin/hiveserver2"]
+    networks:
+      - datastack-net
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "10000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: always
+
+  spark-master:
+    image: bitnami/spark:3.5.1
+    # build:
+    #   context: ./spark
+    container_name: spark-master
+    environment:
+      - SPARK_MODE=master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_WORKER_CORES=6
+      - SPARK_WORKER_MEMORY=6G
+      - SPARK_DAEMON_MEMORY=1G
+      - SPARK_NO_DAEMONIZE=true
+      - PYSPARK_PYTHON=python3
+      - PYSPARK_DRIVER_PYTHON=python3
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
+      - TMPDIR=/tmp/spark-temp
+      - TEMP=/tmp/spark-temp
+      - TMP=/tmp/spark-temp
+    ports:
+      - "7077:7077"
+      - "8080:8080"
+    volumes:
+      - ./jupyter/notebooks:/opt/spark-apps
+      - ./spark/config/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hadoop/warehouse:/user/hive/warehouse
+      - ./spark/logs:/opt/bitnami/spark/logs
+      - /home/zack/spark-temp:/tmp/spark-temp
+      - /home/zack/spark-work:/opt/spark/work
+      - /home/zack/hadoop-temp:/tmp/hadoop-temp
+    networks:
+      - datastack-net
+    restart: always
+
+
+  spark-worker-1:
+    image: bitnami/spark:3.5.1
+    # build:
+    #   context: ./spark
+    container_name: spark-worker-1
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_PORT=7077
+      - SPARK_WORKER_CORES=6
+      - SPARK_WORKER_MEMORY=10G
+      - SPARK_DAEMON_MEMORY=1G
+      - SPARK_NO_DAEMONIZE=true
+      - PYSPARK_PYTHON=python3
+      - PYSPARK_DRIVER_PYTHON=python3
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
+      - TMPDIR=/tmp/spark-temp
+      - TEMP=/tmp/spark-temp
+      - TMP=/tmp/spark-temp
+    volumes:
+      - ./jupyter/notebooks:/opt/spark-apps
+      - ./spark/config/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hadoop/warehouse:/user/hive/warehouse
+      - ./spark/logs:/opt/bitnami/spark/logs
+      - /home/zack/spark-temp:/tmp/spark-temp
+      - /home/zack/spark-work:/opt/spark/work
+      - /home/zack/hadoop-temp:/tmp/hadoop-temp
+    depends_on:
+      - spark-master
+    ports:
+      - "8081:8081"
+    networks:
+      - datastack-net
+    restart: always
+
+  spark-worker-2:
+    image: bitnami/spark:3.5.1
+    # build:
+    #   context: ./spark
+    container_name: spark-worker-2
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_PORT=7077
+      - SPARK_WORKER_CORES=6
+      - SPARK_WORKER_MEMORY=10G
+      - SPARK_DAEMON_MEMORY=1G
+      - SPARK_NO_DAEMONIZE=true
+      - PYSPARK_PYTHON=python3
+      - PYSPARK_DRIVER_PYTHON=python3
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
+      - TMPDIR=/tmp/spark-temp
+      - TEMP=/tmp/spark-temp
+      - TMP=/tmp/spark-temp
+    volumes:
+      - ./jupyter/notebooks:/opt/spark-apps
+      - ./spark/config/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hadoop/warehouse:/user/hive/warehouse
+      - ./spark/logs:/opt/bitnami/spark/logs
+      - /home/zack/spark-temp:/tmp/spark-temp
+      - /home/zack/spark-work:/opt/spark/work
+      - /home/zack/hadoop-temp:/tmp/hadoop-temp
+    depends_on:
+      - spark-master
+    ports:
+      - "8082:8081"
+    networks:
+      - datastack-net
+
+  jupyter:
+    build:
+      context: ./jupyter
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+      - PYSPARK_PYTHON=python3
+      - PYSPARK_DRIVER_PYTHON=python3
+      - SPARK_HOME=/opt/spark
+      - HADOOP_HOME=/opt/hadoop
+      - SPARK_MASTER=spark://spark-master:7077
+      - NB_MEM_LIMIT=8G 
+      - SPARK_LOCAL_DIRS=/tmp/spark-temp
+      - HADOOP_TMP_DIR=/tmp/hadoop-temp
+      - NB_UID=1000
+      - NB_GID=100
+      - GRANT_SUDO=yes
+    volumes:
+      - ..:/home/jovyan/work
+      - ../data:/mnt/data
+      - ./spark/config/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf
+      - ./hive/hive-site.xml:/opt/spark/conf/hive-site.xml
+      - /home/zack/spark-temp:/tmp/spark-temp
+      - /home/zack/spark-work:/opt/spark/work
+      - /home/zack/hadoop-temp:/tmp/hadoop-temp
+      - ./data-transfer:/data-transfer
+      - /mnt/d:/mnt/d
+    depends_on:
+      - spark-master
+    networks:
+      - datastack-net
+
+  superset-db:
+    image: postgres:14
+    container_name: superset-db
+    environment:
+      POSTGRES_DB: superset
+      POSTGRES_USER: superset
+      POSTGRES_PASSWORD: superset
+    volumes:
+      - superset_db:/var/lib/postgresql/data
+    networks:
+      - datastack-net
+
+  superset:
+    image: apache/superset:3.0.4
+    container_name: superset
+    ports:
+      - "8088:8088"
+    environment:
+      - SUPERSET_SECRET_KEY=mysecretkey
+      - DATABASE_URL=postgresql+psycopg2://superset:superset@superset-db:5432/superset
+    depends_on:
+      - superset-db
+    networks:
+      - datastack-net
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-db:
+    image: postgres:14
+    container_name: airflow-db
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+    volumes:
+      - airflow_postgres_db:/var/lib/postgresql/data
+    networks:
+      - datastack-net
+    restart: always
+
+  airflow:
+    image: apache/airflow:2.9.0
+    container_name: airflow
+    user: root
+    ports:
+      - "8070:8080"
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@airflow-db:5432/airflow
+      - AIRFLOW__CORE__FERNET_KEY=QMJWpgCUkJ_Tn9rtQS7rS9IJ6ZXrB3GjHBvomloI-gI=
+      - AIRFLOW__WEBSERVER__EXPOSE_CONFIG=True
+      - AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=False
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+    command: bash -c "airflow db migrate && airflow webserver"
+    depends_on:
+      - airflow-db
+    networks:
+      - datastack-net
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
+  hive_metastore_db:
+  superset_db:
+  airflow_postgres_db:
+
+networks:
+  datastack-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

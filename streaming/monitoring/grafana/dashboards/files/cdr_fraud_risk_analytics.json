@@ -1,0 +1,140 @@
+{
+  "uid": "cdr-fraud-risk",
+  "title": "CDR Fraud & Risk Analytics",
+  "tags": ["fraud", "risk", "security"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "title": "Anomaly Events by Type",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(cdr_anomaly_events_total) by (anomaly_type)",
+          "legendFormat": "{{anomaly_type}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "High Anomaly Score Sessions",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "topk(15, sum by (subscriber_id, session_id) (cdr_anomaly_events_total))",
+          "format": "table",
+          "instant": true,
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "Fraud Detection Timeline",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_anomaly_events_total[5m]))",
+          "legendFormat": "Total Anomalies",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(rate(cdr_generator_errors_total{error_type=\"fraud_detected\"}[5m]))",
+          "legendFormat": "Fraud Detected",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        }
+      }
+    },
+    {
+      "title": "Revenue at Risk",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_anomaly_events_total[1h])) * 150",
+          "refId": "E"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyDZD",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1000 },
+              { "color": "red", "value": 5000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Anomaly Detection Efficiency",
+      "type": "gauge",
+      "gridPos": { "x": 8, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "expr": "(sum(cdr_anomaly_events_total) / sum(cdr_events_generated_total)) * 100",
+          "refId": "F"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 10,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Top Risk Indicators",
+      "type": "piechart",
+      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(cdr_generator_errors_total) by (error_type)",
+          "legendFormat": "{{error_type}}",
+          "refId": "G"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}
