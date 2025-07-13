@@ -1,0 +1,92 @@
+{
+  "uid": "cdr-streaming-overview",
+  "title": "CDR Streaming Overview",
+  "timezone": "browser",
+  "tags": ["streaming", "CDR", "overview"],
+  "refresh": "10s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "title": "Event Generation Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_events_generated_total[1m])) by (event_type)",
+          "legendFormat": "{{event_type}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ops" } }
+    },
+    {
+      "title": "Kafka Lag by Topic",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "kafka_consumer_lag_sum",
+          "legendFormat": "{{topic}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "Active Sessions by Service Type",
+      "type": "bargauge",
+      "gridPos": { "x": 0, "y": 6, "w": 8, "h": 5 },
+      "targets": [
+        {
+          "expr": "sum(cdr_active_sessions) by (service_type)",
+          "legendFormat": "{{service_type}}",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": { "defaults": { "min": 0 } }
+    },
+    {
+      "title": "Error Rate",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 6, "w": 4, "h": 5 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_generator_errors_total[5m]))",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [ { "color": "green" }, { "color": "yellow", "value": 0.01 }, { "color": "red", "value": 0.05 } ] },
+          "unit": "ops"
+        }
+      }
+    },
+    {
+      "title": "Processing Latency P95",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 6, "w": 4, "h": 5 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(cdr_kafka_send_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95 Latency",
+          "refId": "E"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "Total Events Generated",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 6, "w": 8, "h": 5 },
+      "targets": [
+        {
+          "expr": "sum(cdr_events_generated_total)",
+          "refId": "F"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } }
+    }
+  ],
+  "schemaVersion": 36,
+  "version": 1
+}

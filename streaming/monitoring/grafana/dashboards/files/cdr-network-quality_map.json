@@ -1,0 +1,119 @@
+{
+  "uid": "cdr-network-quality",
+  "title": "CDR Network Quality Monitoring",
+  "tags": ["network", "quality", "performance"],
+  "timezone": "browser",
+  "refresh": "15s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "title": "Kafka Broker Performance",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "rate(kafka_server_brokertopicmetrics_messagesin_total[5m])",
+          "legendFormat": "Messages In - {{topic}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          }
+        }
+      }
+    },
+    {
+      "title": "Consumer Lag by Partition",
+      "type": "heatmap",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "kafka_consumer_lag",
+          "format": "time_series",
+          "refId": "B"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false
+        }
+      }
+    },
+    {
+      "title": "Processing Latency Distribution",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(cdr_processing_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(cdr_processing_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(cdr_processing_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "Kafka Send Latency",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum(rate(cdr_kafka_send_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(cdr_kafka_send_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(cdr_kafka_send_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "JVM Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 24, "h": 6 },
+      "targets": [
+        {
+          "expr": "java_lang_memory_heapmemoryusage_used{job=\"jmx-brokers\"}",
+          "legendFormat": "{{instance}} - Heap Used",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { 
+        "defaults": { 
+          "unit": "bytes",
+          "custom": {
+            "fillOpacity": 10,
+            "lineInterpolation": "smooth"
+          }
+        } 
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

@@ -1,0 +1,124 @@
+{
+  "uid": "cdr-business-analytics",
+  "title": "CDR Business Analytics",
+  "tags": ["business", "revenue", "analytics"],
+  "timezone": "browser",
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "panels": [
+    {
+      "title": "Estimated Revenue (DZD/hour)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_events_generated_total{event_type=\"SESSION_END\"}[1h])) * 3600 * 2.5",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { 
+        "defaults": { 
+          "unit": "currencyDZD",
+          "decimals": 2
+        } 
+      }
+    },
+    {
+      "title": "Sessions by Service Type",
+      "type": "piechart",
+      "gridPos": { "x": 6, "y": 0, "w": 8, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(increase(cdr_events_generated_total{event_type=\"SESSION_START\"}[1h])) by (service_type)",
+          "legendFormat": "{{service_type}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "Active Sessions Gauge",
+      "type": "bargauge",
+      "gridPos": { "x": 14, "y": 0, "w": 10, "h": 8 },
+      "targets": [
+        {
+          "expr": "cdr_active_sessions",
+          "legendFormat": "Current Active Sessions",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "max": 10000,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5000 },
+              { "color": "red", "value": 8000 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Unique Subscribers",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 4, "w": 6, "h": 4 },
+      "targets": [
+        {
+          "expr": "count(count by (subscriber_id)(cdr_events_generated_total))",
+          "refId": "D"
+        }
+      ]
+    },
+    {
+      "title": "Event Generation Trends",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_events_generated_total[5m])) by (event_type)",
+          "legendFormat": "{{event_type}}",
+          "refId": "E"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          }
+        }
+      }
+    },
+    {
+      "title": "Processing Performance",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 16, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "rate(cdr_processing_seconds_sum[5m]) / rate(cdr_processing_seconds_count[5m])",
+          "legendFormat": "Avg Processing Time",
+          "refId": "F"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "Kafka Send Performance",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 16, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "rate(cdr_kafka_send_seconds_sum[5m]) / rate(cdr_kafka_send_seconds_count[5m])",
+          "legendFormat": "Avg Kafka Send Time",
+          "refId": "G"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

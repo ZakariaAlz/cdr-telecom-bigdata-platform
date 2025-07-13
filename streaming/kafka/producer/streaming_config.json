@@ -1,0 +1,64 @@
+{
+  "subscriber_pool_size": 30000,
+  "algerian_wilayas": [
+    "Adrar", "Chlef", "Laghouat", "Oum El Bouaghi", "Batna", "Béjaïa", "Biskra", "Béchar",
+    "Blida", "Bouira", "Tamanrasset", "Tébessa", "Tlemcen", "Tiaret", "Tizi Ouzou", "Alger",
+    "Djelfa", "Jijel", "Sétif", "Saïda", "Skikda", "Sidi Bel Abbès", "Annaba", "Guelma",
+    "Constantine", "Médéa", "Mostaganem", "MSila", "Mascara", "Ouargla", "Oran", "El Bayadh",
+    "Illizi", "Bordj Bou Arréridj", "Boumerdès", "El Tarf", "Tindouf", "Tissemsilt",
+    "El Oued", "Khenchela", "Souk Ahras", "Tipaza", "Mila", "Aïn Defla", "Naâma", "Aïn Témouchent",
+    "Ghardaïa", "Relizane", "Timimoun", "Bordj Badji Mokhtar", "Ouled Djellal", "Béni Abbès",
+    "In Salah", "In Guezzam", "Touggourt", "Djanet", "El M'Ghair", "El Meniaa"
+  ],
+  "operators": [
+    {"name": "Mobilis", "mnc": "01", "market_share": 0.45, "prefixes": ["0660", "0661", "0662", "0663"]},
+    {"name": "Djezzy", "mnc": "02", "market_share": 0.35, "prefixes": ["0770", "0771", "0772", "0773"]},
+    {"name": "Ooredoo", "mnc": "03", "market_share": 0.20, "prefixes": ["0540", "0541", "0542", "0543"]}
+  ],
+  "segments": ["Premium", "Standard", "Youth", "Basic"],
+  "app_categories": ["social", "video", "business", "gaming", "news", "shopping", "mixed"],
+  "popular_apps": [
+    {"name": "WhatsApp", "category": "social", "prob": 0.25},
+    {"name": "Facebook", "category": "social", "prob": 0.20},
+    {"name": "YouTube", "category": "video", "prob": 0.18},
+    {"name": "Instagram", "category": "social", "prob": 0.10},
+    {"name": "TikTok", "category": "video", "prob": 0.07},
+    {"name": "Snapchat", "category": "social", "prob": 0.05},
+    {"name": "Zoom", "category": "business", "prob": 0.05},
+    {"name": "Teams", "category": "business", "prob": 0.03},
+    {"name": "PUBG", "category": "gaming", "prob": 0.03},
+    {"name": "Netflix", "category": "video", "prob": 0.04}
+  ],
+  "activity_patterns": {
+    "morning_heavy": 0.10,
+    "evening_heavy": 0.25,
+    "night_owl": 0.10,
+    "business_hours": 0.18,
+    "weekend_warrior": 0.15,
+    "balanced": 0.22
+  },
+  "subscriber_segments": {
+    "Premium": 0.1,
+    "Standard": 0.5,
+    "Youth": 0.25,
+    "Basic": 0.15
+  },
+  "network_technologies": {
+    "5G": 0.06,
+    "4G": 0.65,
+    "3G": 0.23,
+    "2G": 0.06
+  },
+  "international_prefixes": [
+    { "prefix": "+33", "country": "France", "weight": 0.32 },
+    { "prefix": "+213", "country": "Algeria", "weight": 0.5 },
+    { "prefix": "+212", "country": "Morocco", "weight": 0.07 },
+    { "prefix": "+216", "country": "Tunisia", "weight": 0.05 },
+    { "prefix": "+49", "country": "Germany", "weight": 0.03 },
+    { "prefix": "+1", "country": "Canada", "weight": 0.03 }
+  ],
+  "data_profiles": ["video_streaming", "social_media_heavy", "gaming", "business_apps", "mixed"],
+  "rate_plans": ["Pixi_20", "Pixi_50", "Pixi_100", "Hayla_50", "Hayla_100", "Hayla_Maxi", "Haya_15", "Haya_35", "Haya_55"],
+  "session_type_distribution": [0.2, 0.5, 0.15, 0.1, 0.05], 
+  "prob_roaming": 0.04
+}

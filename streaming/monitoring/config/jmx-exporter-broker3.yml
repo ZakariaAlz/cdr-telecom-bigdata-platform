@@ -1,0 +1,7 @@
+startDelaySeconds: 0
+hostPort: broker3:9103
+ssl: false
+lowercaseOutputName: false
+lowercaseOutputLabelNames: false
+rules:
+  - pattern: ".*"

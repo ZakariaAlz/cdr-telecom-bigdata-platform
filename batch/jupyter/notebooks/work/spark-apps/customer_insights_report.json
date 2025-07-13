@@ -1,0 +1,29 @@
+{
+  "total_customers": 530719,
+  "active_customers": 519986,
+  "overall_churn_rate": 0.020223508108810906,
+  "revenue_insights": {
+    "total_monthly_revenue": 1399972200.0,
+    "arpu": 2692.326716488521,
+    "revenue_at_risk": 28729050.0
+  },
+  "segment_insights": {
+    "highest_value_segment": "Medium Value",
+    "highest_churn_segment": "PARTICULIER",
+    "fastest_growing_service": "FTTH",
+    "underserved_wilayas": [
+      "Bordj Bou Arreridj",
+      "Biskra",
+      "Djelfa",
+      "Tipaza",
+      "Mostaganem"
+    ]
+  },
+  "recommendations": [
+    "Focus retention efforts on Medium Value segment (highest churn)",
+    "Expand FTTH coverage in underserved wilayas",
+    "Develop targeted offers for Students and Freelancers",
+    "Improve network quality in regions with >3% churn",
+    "Create upgrade paths from ADSL to FTTH"
+  ]
+}
