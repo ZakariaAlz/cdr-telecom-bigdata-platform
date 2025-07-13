@@ -1,0 +1,364 @@
+version: "3.8"
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: zookeeper
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+      - ZOOKEEPER_TICK_TIME=2000
+      - KAFKA_JMX_PORT=9101
+      - ZOOKEEPER_SYNC_LIMIT=2
+      - ZOOKEEPER_INIT_LIMIT=5
+    ports:
+      - "2181:2181"
+    networks:
+      - streaming_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 2181 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  broker1:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: broker1
+    container_name: broker1
+    env_file:
+      - ./kafka/envs/broker1.env
+    # depends_on:
+    #   zookeeper:
+    #     condition: service_healthy
+    ports:
+      - "9092:9092"
+      - "29092:29092" 
+      - "9101:9101"
+      # - "19092:19092"
+      # - "9101:9101"
+    # environment:
+    #   - KAFKA_BROKER_ID=1
+    #   - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+    #   - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker1:9092
+    #   - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    networks:
+      - streaming_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  broker2:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: broker2
+    container_name: broker2
+    env_file:
+      - ./kafka/envs/broker2.env
+    # depends_on:
+    #   zookeeper:
+    #     condition: service_healthy
+    ports:
+      - "9093:9093"
+      - "29093:29093" 
+      - "9102:9102"
+      # - "19093:19093"
+      # - "9102:9102"
+    # environment:
+    #   - KAFKA_BROKER_ID=2
+    #   - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+    #   - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker2:9093
+    #   - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    networks:
+      - streaming_net
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 9093 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  broker3:
+    image: confluentinc/cp-kafka:7.6.0
+    hostname: broker3
+    container_name: broker3
+    env_file:
+      - ./kafka/envs/broker3.env
+    # depends_on:
+    #   zookeeper:
+    #     condition: service_healthy
+    ports:
+      - "9094:9094"
+      - "29094:29094" 
+      - "9103:9103"
+      # - "19094:19094"
+      # - "9103:9103"
+    # environment:
+    #   - KAFKA_BROKER_ID=3
+    #   - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+    #   - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker3:9094
+    #   - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+    networks:
+      - streaming_net
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 9094 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kafka-exporter:
+    image: bitnami/kafka-exporter:1.7.0
+    container_name: kafka-exporter
+    ports:
+      - "9308:9308"
+    command:
+      - --kafka.server=broker1:29092
+      - --kafka.server=broker2:29093
+      - --kafka.server=broker3:29094
+      - --zookeeper.server=zookeeper:2181
+    networks:
+      - streaming_net  
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 9308 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    hostname: kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8085:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "broker1:29092,broker2:29093,broker3:29094"
+      KAFKA_CLUSTERS_0_ZOOKEEPER: "zookeeper:2181"
+      SERVER_PORT: 8080
+    depends_on:
+      - broker1
+      - broker2
+      - broker3
+      - zookeeper
+    networks:
+      - streaming_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  jmx-exporter-broker1:
+    image: bitnami/jmx-exporter:0.20.0
+    container_name: jmx-exporter-broker1
+    hostname: jmx-exporter-broker1
+    ports:
+      - "5556:5556"
+    networks:
+      - streaming_net  
+    volumes:
+      - ./monitoring/config/jmx-exporter-broker1.yml:/opt/bitnami/jmx-exporter/example_configs/httpserver_sample_config.yml
+    restart: unless-stopped
+
+  jmx-exporter-broker2:
+    image: bitnami/jmx-exporter:0.20.0
+    container_name: jmx-exporter-broker2
+    hostname: jmx-exporter-broker2
+    ports:
+      - "5557:5557"
+    volumes:
+      - ./monitoring/config/jmx-exporter-broker2.yml:/opt/bitnami/jmx-exporter/example_configs/httpserver_sample_config.yml
+    networks:
+      - streaming_net 
+    restart: unless-stopped
+
+  jmx-exporter-broker3:
+    image: bitnami/jmx-exporter:0.20.0
+    container_name: jmx-exporter-broker3
+    hostname: jmx-exporter-broker3
+    ports:
+      - "5558:5558"
+    networks:
+      - streaming_net    
+    volumes:
+      - ./monitoring/config/jmx-exporter-broker3.yml:/opt/bitnami/jmx-exporter/example_configs/httpserver_sample_config.yml
+    restart: unless-stopped
+
+  flink-jobmanager:
+    image: flink:1.18.1-scala_2.12
+    container_name: flink-jobmanager
+    hostname: flink-jobmanager
+    command: jobmanager
+    ports:
+      - "8081:8081"
+      - "9249:9249"  # <-- port prometheus metrics
+    volumes:
+      - ./flink/conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+      - ./flink/jars:/opt/flink/lib
+      - ./flink/sql:/opt/flink/sql
+    # environment:
+    #   - JOB_MANAGER_RPC_ADDRESS=flink-jobmanager
+    #   - "FLINK_PROPERTIES=jobmanager.rpc.address: flink-jobmanager"
+    #   - "FLINK_PROPERTIES=metrics.reporter.prom.class: org.apache.flink.metrics.prometheus.PrometheusReporter"
+    #   - "FLINK_PROPERTIES=metrics.reporter.prom.port: 9249"
+    #   - FLINK_MODE=jobmanager
+    #   - FLINK_CFG_REST_BIND__ADDRESS=0.0.0.0
+    networks:
+      - streaming_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 8081 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  flink-taskmanager:
+    image: flink:1.18.1-scala_2.12
+    container_name: flink-taskmanager
+    hostname: flink-taskmanager
+    command: taskmanager
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy
+    ports:
+      - "6121:6121"
+      - "6122:6122"
+      - "9250:9249"  # <-- port prometheus metrics
+    environment:
+      # - TASK_MANAGER_NUMBER_OF_TASK_SLOTS=4
+      # - FLINK_MODE=taskmanager
+      # - FLINK_JOB_MANAGER_RPC_ADDRESS=jobmanager
+      # - "FLINK_PROPERTIES=jobmanager.rpc.address: flink-jobmanager"
+      # - "FLINK_PROPERTIES=metrics.reporter.prom.class: org.apache.flink.metrics.prometheus.PrometheusReporter"
+      # - "FLINK_PROPERTIES=metrics.reporter.prom.port: 9249"
+      # - "FLINK_PROPERTIES=sql-client.verbose: true"
+      # - "FLINK_PROPERTIES=taskmanager.memory.process.size: 2g"
+      # - "FLINK_PROPERTIES=jobmanager.memory.process.size: 2g"
+    volumes:
+      - ./flink/jars:/opt/flink/lib
+      - ./flink/sql:/opt/flink/sql
+      - ./flink/conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+    networks:
+      - streaming_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 6121 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  flink-sql-client:
+    image: flink:1.18.1-scala_2.12
+    container_name: flink-sql-client
+    entrypoint: ["/opt/flink/bin/sql-client.sh", "embedded", "-l", "/opt/flink/lib"]
+    depends_on:
+      - flink-jobmanager
+    networks:
+      - streaming_net
+    volumes:
+      - ./flink/jars:/opt/flink/lib
+      - ./flink/sql:/opt/flink/sql
+      - ./flink/conf/flink-conf.yaml:/opt/flink/conf/flink-conf.yaml
+    tty: true
+    stdin_open: true
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    hostname: prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/rules:/etc/prometheus/rules
+    networks:
+      - streaming_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:9090/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./monitoring/prometheus/alertmanager:/etc/alertmanager
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    ports:
+      - "9093:9093"
+    networks:
+      - streaming_net
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+        - GF_SECURITY_ADMIN_PASSWORD=admin
+        - GF_SECURITY_ADMIN_USER=admin
+        - GF_AUTH_ANONYMOUS_ENABLED='true'
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/datasources/default-datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./monitoring/grafana/dashboards/dashboard-provisioning.yml:/etc/grafana/provisioning/dashboards/dashboard-provisioning.yml
+      - ./monitoring/grafana/dashboards/files:/etc/grafana/provisioning/dashboards/files
+      - grafana_data:/var/lib/grafana
+    networks:
+      - streaming_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  postgres:
+    image: postgres:14
+    container_name: postgres
+    environment:
+      POSTGRES_DB: cdr_warehouse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./flink/sql/init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - streaming_net
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: wrouesnel/postgres_exporter:latest
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres:5432/cdr_warehouse?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - streaming_net
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  postgres_data:
+  alertmanager_data:
+
+
+networks:
+  streaming_net:
+    external: true
+
+    

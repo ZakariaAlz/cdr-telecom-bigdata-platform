@@ -1,0 +1,123 @@
+{
+  "uid": "cdr-churn-analysis",
+  "title": "CDR Churn Risk Analysis",
+  "tags": ["churn", "risk", "subscribers"],
+  "timezone": "browser",
+  "refresh": "1m",
+  "time": { "from": "now-7d", "to": "now" },
+  "panels": [
+    {
+      "title": "Sessions with Churn Risk Flag",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_events_generated_total{event_type=\"SESSION_END\"}[5m])) by (churn_risk_flag)",
+          "legendFormat": "Churn Risk: {{churn_risk_flag}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "fillOpacity": 20
+          }
+        }
+      }
+    },
+    {
+      "title": "Total At-Risk Subscribers",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "count(count by (subscriber_id)(cdr_events_generated_total{churn_risk_flag=\"1\"}))",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 100 },
+              { "color": "red", "value": 500 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Churn Risk Percentage",
+      "type": "gauge",
+      "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+      "targets": [
+        {
+          "expr": "(count(count by (subscriber_id)(cdr_events_generated_total{churn_risk_flag=\"1\"})) / count(count by (subscriber_id)(cdr_events_generated_total))) * 100",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Low Activity Subscribers",
+      "type": "table",
+      "gridPos": { "x": 0, "y": 6, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "bottomk(20, sum by (subscriber_id) (rate(cdr_events_generated_total[24h])))",
+          "format": "table",
+          "instant": true,
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        }
+      }
+    },
+    {
+      "title": "Session Activity Heatmap",
+      "type": "heatmap",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(increase(cdr_events_generated_total{event_type=\"SESSION_START\"}[1h])) by (hour)",
+          "format": "time_series",
+          "refId": "E"
+        }
+      ],
+      "options": {
+        "calculate": false,
+        "yAxis": {
+          "axisPlacement": "left",
+          "reverse": false
+        }
+      }
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}

@@ -1,0 +1,103 @@
+{
+  "uid": "cdr-anomaly-trends",
+  "title": "CDR Anomaly Trends & Alerts",
+  "tags": ["anomalies", "alerts", "fraud"],
+  "timezone": "browser",
+  "refresh": "15s",
+  "time": { "from": "now-24h", "to": "now" },
+  "panels": [
+    {
+      "title": "Anomaly Detection Rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(rate(cdr_anomaly_events_total[5m]))",
+          "legendFormat": "Anomalies/sec",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { 
+        "defaults": { 
+          "unit": "ops",
+          "custom": {
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          }
+        } 
+      }
+    },
+    {
+      "title": "Total Anomalies Detected",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 6 },
+      "targets": [
+        {
+          "expr": "sum(cdr_anomaly_events_total)",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1000 },
+              { "color": "red", "value": 5000 }
+            ]
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "Error Types Distribution",
+      "type": "piechart",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "sum(cdr_generator_errors_total) by (error_type)",
+          "legendFormat": "{{error_type}}",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "title": "High Risk Sessions",
+      "type": "table",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "expr": "topk(10, sum by (subscriber_id) (rate(cdr_anomaly_events_total[1h])))",
+          "format": "table",
+          "instant": true,
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto"
+          }
+        }
+      }
+    },
+    {
+      "title": "Anomaly Score Histogram",
+      "type": "histogram",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(cdr_processing_seconds_bucket[5m])) by (le))",
+          "legendFormat": "P95 Processing Time",
+          "refId": "E"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 38,
+  "version": 1
+}
