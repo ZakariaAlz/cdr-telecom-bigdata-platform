@@ -1,0 +1,26 @@
+{
+  "timestamp": "2025-07-06 12:54:11",
+  "hdfs_validation": {
+    "cdr_files_count": 41,
+    "total_size_gb": 11.53,
+    "customer_file_exists": true,
+    "path_validation": "PASSED"
+  },
+  "customer_data": {
+    "total_records": 530719,
+    "active_customers": 519986,
+    "schema_fields": 22,
+    "duplicate_ids": 75,
+    "null_critical_fields": 5
+  },
+  "cdr_data": {
+    "estimated_total_records": 768897000,
+    "sample_size": 7688970,
+    "timestamp_range_valid": true,
+    "cdr_types_found": 5
+  },
+  "cross_validation": {
+    "customer_match_rate": 100.0
+  },
+  "overall_status": "PASSED_WITH_WARNINGS"
+}
