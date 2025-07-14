@@ -1,8 +1,5 @@
 ![Project Banner](assets/github-header-image.png)
 
-
-# CDR Telecom Big Data Platform
-
 # CDR Telecom Big Data Platform
 
 **Final-Year Internship • Algérie Télécom • July 2025**
@@ -132,15 +129,16 @@ network_trend_analysis/
  ## 🚀 How to Download & Run
 
 #### 1. Clone the repo
-
+Clone the repo and move into the project directory:
 ```bash
-git clone https://github.com/your-org/cdr-telecom-bigdata-platform.git
+git clone https://github.com/ZakariaAlz/cdr-telecom-bigdata-platform.git
 
 cd cdr-telecom-bigdata-platform
 ```
+This will fetch all code, configs and assets (including Dockerfiles, notebooks, and dashboards).
 
-#### 2. Start all Batch services and Build Jupyter image
-
+#### 2. Build & launch the batch services
+We first build the custom Jupyter/Spark image and start HDFS, Hive, Spark, Superset and (future) Airflow:
 ```bash
 cd batch 
 podman-compose -f batch/docker-compose-batch.yml up -d
@@ -148,22 +146,15 @@ podman-compose -f batch/docker-compose-batch.yml up -d
 ```
 
 #### 3. Start streaming services
-
+This brings up Zookeeper, Kafka (3 brokers), Kafka-UI, Flink and monitoring services:
 ```bash
 cd streaming 
 podman-compose -f docker-compose-streaming.yml up -d
 ```
-
-
-#### 3. Start streaming services
-
-```bash
-cd streaming 
-podman-compose -f docker-compose-streaming.yml up -d
-```
-
+Verify with Kafka-UI and Grafana dashboards.
 
 #### 4. Generate & ingest CDRs (Batch)
+Use the safe-by-design generator to create PII-hashed CDR files and copy them into HDFS:
 
 ```bash
 cd cdr-data-generator/Python-CDR-Generator
@@ -174,9 +165,11 @@ podman-compose -f docker-compose-streaming.yml up -d
 
 #access Namenode Container 
 podman exec -it namenode bash
-
+```
+Then load those files into your HDFS raw zone.
+```bash
 #inside the container Namenode
-hdfs dfs -mkdir -p /data/Raw/generated_at_cdr_enhanced
+hdfs dfs -mkdir -p /user/hive/warehouse/Raw/generated_at_cdr_enhanced
 
 hdfs dfs -put /mnt/generated_at_cdr_enhanced_fixed/*  /data/Raw/generated_at_cdr_enhanced/
 ```
@@ -188,17 +181,18 @@ python3 cdr_at_data_generator.py --help
 ```
 
 
-#### 5. Generate & ingest CDRs (Streaming)
-
+#### 5. Start the live CDR producer (Streaming)
+Kick off your Kafka producer to emit streaming CDR events:
 ```bash
 cd streaming/kafka/producer
 python3 cdr_stream_gen.py \
   --config streaming_config.json \
 ```
+You should see events arriving in your Kafka topics, use Kafka UI, It will be way easier ;) 
 
-Check Kafka UI : localhost:8085
 
-#### 📡 Check UIs Service Endpoints
+
+#### 6. 📡 Check UIs Service Endpoints
 
 | Service               | URL                          |
 |-----------------------|------------------------------|
@@ -220,9 +214,16 @@ Check Kafka UI : localhost:8085
 | **JMX Exporter 2**    | http://localhost:5557        |
 | **JMX Exporter 3**    | http://localhost:5558        |
 
-### 📊 Sample Dashboards
+
+#### 7. Explore Jupyter and Run the batch ELT pipeline
+
+Connect to JupyterLab at http://localhost:8888 for step-by-step notebooks (EDA → Hive DDL → feature engineering → BI exports).
+
+
+### 8. 📊 Sample Dashboards
 
 #### Superset Dashboards Overview 
+Open Superset at http://localhost:8088 to browse pre-built dashboards and charts.
 
 ![Network_Operations_Dashboard](assets/Network_Operations_Dashboard.png)
 ![User_Behavior_Analytics](assets/User_Behavior_Analytics.png)
@@ -234,13 +235,20 @@ Check Kafka UI : localhost:8085
 ![Pie Charts](assets/PieCharts.png)
 ![Anomaly](assets/Anomaly.png)
 
+### 9. 📊 Monitor & Alert
+
+Use Grafana (:3000) and Prometheus (:9090) to track Kafka lag, Flink health
+Alerts will appear in AlertManager (:9093) if thresholds are breached.
+
 
 ### 🚧 Roadmap
 
 - ✅ Batch ETL & Hive integration
 
 - ✅ Streaming stack & live CDR producer
-
+  
+- 🚧 Apache Flink Jobs 
+  
 - 🚧 Apache Airflow orchestration
 
 - 🚧 Great Expectations for data-quality tests
@@ -254,4 +262,5 @@ Check Kafka UI : localhost:8085
 3. Submit a pull request
 
 ### 📄 License
-Apache 2.0 © Zakaria Alizouaoui
+
+This project is licensed under the [Apache License 2.0](LICENSE).
